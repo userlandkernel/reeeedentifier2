@@ -13,7 +13,7 @@ The two Phillips screws on the bottom of the back are hidden beneath the black s
 First notable thing on the board are the two 3V Panasconic batteries for powering the device when not on USB.  
 It appears the device is always turned on and has an interrupt listener for the smartcard reader.  
 The interrupt handler fires when the reader (chip in the middle with the 6 golden pins) detects a smartcard.
-When detected the display will turn on and show the preprogrammed main menu.
+It will turn on the display and show the preprogrammed main menu.
 
 ### Sniffing glue
 USB is by default not a secure protocol for communication.  
