@@ -103,7 +103,7 @@ class Edentifier(object):
 			print(ex)
 
 	def write(self, data):
-		return self.epout.write(data, self.epin.wMaxPacketSize)
+		return self.epout.write(data, self.epout.wMaxPacketSize)
 
 	def read(self):
 		return self.epin.read(self.epin.wMaxPacketSize)
