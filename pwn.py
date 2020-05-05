@@ -18,31 +18,18 @@ class EddieFuzzer(object):
 
 	def __init__(self, eddie = None):
 		self.eddie = eddie
-		self.cmds = []
-		for i in range(0, 0xffff):
-			self.cmds.append(struct.pack('q', i))
 
-	def Fuzz(self, start = 0, count = 0x0, step = 0, timeout = 0.5):
+	def Fuzz(self, start = 0, count = 0x0, step = 0, timeout = 0):
 
 		i = start
 		if count == 0:
-			count = len(self.cmds) 
+			count = 0xffffffff
 
 		print("Fuzzing %d packets " % (count-start))
 		while i < count:
 			try:
-				err = self.eddie.write(self.cmds[i])
-
-				err2 = None
-				try:
-					err2 = self.eddie.read()
-				except Exception as ex:
-					pass
-
-				if err2 != None:
-					print("PACKET: %d\tWRET: %d\tRRET: %d" % (i, err, err2))
-				else:
-					print("PACKET: %d\tWRET: %d" % (i, err))
+				err = self.eddie.write(struct.pack('q', i))
+				print("PACKET: %d\tWRET: %d" % (i, err))
 
 				if timeout:
 					time.sleep(timeout)
@@ -67,6 +54,7 @@ class Edentifier(object):
 		print("#] Waiting for ABN AMRO e.dentifier 2...")
 		while self.dev == None:
 			self.dev = usb.core.find(idVendor=vid, idProduct=pid)
+		print("#] Got one: %s" % usb.util.get_string(self.dev, self.dev.iManufacturer))
 
 		if self.dev.is_kernel_driver_active(0):
 			try:
@@ -141,14 +129,6 @@ class Edentifier(object):
 	def Status(self):
 		return self.write(CMD_STATUS)
 
-
-def banner():
-
-	print(hacklet.renderText(" Reeeedentifier2"))
-	print("\t\tCreated by S. Voigtlander")
-	print("")
-
-
 def animation_blink(eddie, seconds=0):
 	t1 = time.time()
 	while True:
@@ -172,34 +152,83 @@ def animation_loading(eddie, seconds=0):
 			break
 
 
-def main():
+class EDFApplication(object):
 
-	banner()
+	def __init__(self):
+		self.args = sys.argv
 
-	eddie = Edentifier()
+	def DisplayBanner(self):
+		print(hacklet.renderText(" Reeeedentifier2"))
+		print("\t\tCreated by S. Voigtlander")
+		print("")
 
-	# Set up the device
-	eddie.Setup()
+	def DisplayUsage(self):
+		print("\tUsage: ")
+		print(" ")
+		print("\t\t--reset\tReset the e.dentifier2")
+		print("\t\t--loader [seconds] \tDisplay loading animation on e.dentifier2")
+		print("\t\t--blink [seconds] \tDisplay blink animation on e.dentifier2")
+		print("\t\t--fuzz (start) (end) (step) (delay)\t Fuzz the e.dentifier2")
+		#print("\t\t--morse [morsetext]")
+		print("")
 
-	print('Uploading...')
-	animation_loading(eddie, 20)
+	def Fuzz(self, s=0, e=0, st=0, t=0):
+		print("Fuzzing e.dentifier2...")
+		feddie = EddieFuzzer(self.eddie)
+		feddie.Fuzz(start=s, count=e, step=st, timeout=t)
 
-	print('Installing...')
-	animation_blink(eddie, 10)
+	def Run(self):
 
-	print('Done')
+		self.DisplayBanner()
 
-#	print(eddie.Status())
-#	print(eddie.PowerOn())
-#	print(eddie.PowerOff())
+		if len(self.args) < 2:
+			self.DisplayUsage()
+			sys.exit(1)
 
-	#fuddie = EddieFuzzer(eddie)
+		self.eddie = Edentifier()
+		self.eddie.Setup()
 
-	
+		if self.args[1] == "--reset":
+			print("Resetting e.dentifier2")
+			self.eddie.Reset()
+			print("Done")
 
-	#fuddie.Fuzz(start=0x0102, step = 0x0100, timeout=0)
+		elif self.args[1] == "--loader":
 
+			if len(self.args) <= 2:
+				self.DisplayUsage()
+				sys.exit(1)
 
+			print("Presenting loading animation on e.dentifier2 for %d seconds" % int(self.args[2]))
+			animation_loading(self.eddie, int(self.args[2]))
+			print("Done")
+
+		elif self.args[1] == "--blink":
+
+			if len(self.args) <= 2:
+				self.DisplayUsage()
+				sys.exit(1)
+
+			print("Blinking e.dentifier2 for %d seconds..." % int(self.args[2]))
+			animation_blink(self.eddie, int(self.args[2]))
+			print("Done")
+
+		elif self.args[1] == "--fuzz":
+
+			if len(self.args) <= 5:
+				self.DisplayUsage()
+				sys.exit(1)
+
+			s = int(self.args[2])
+			e = int(self.args[3])
+			st = int(self.args[4])
+			t = int(self.args[5])
+
+			self.Fuzz(s,e,st,t)
+
+		if self.eddie:
+			self.eddie.Reset()
 
 if __name__ == "__main__":
-	main()
+	app = EDFApplication()
+	app.Run()
